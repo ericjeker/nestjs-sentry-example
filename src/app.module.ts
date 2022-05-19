@@ -7,6 +7,7 @@ import { AppService } from './app.service';
 
 import { SentryModule } from './sentry/sentry.module';
 import * as Sentry from '@sentry/node';
+import '@sentry/tracing';
 
 @Module({
   imports: [
