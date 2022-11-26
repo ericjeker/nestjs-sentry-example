@@ -4,9 +4,12 @@ Simple Sentry setup on [Nest](https://github.com/nestjs/nest) framework.
 Just explore the code for more details, especially the files in the `sentry` 
 folder.
 
+
 ## Installation
 
-To run this simple example, first copy `.env.sample` and insert your own Sentry dns.
+To run this simple example, clone this repository and install the dependencies. Then copy `.env.sample` to `.env` and insert your own Sentry DNS.
+
+You can find DNS for your project on Sentry.io in Project Setting / Client Keys.
 
 Then run Nest using the usual command:
 
@@ -14,9 +17,21 @@ Then run Nest using the usual command:
 $ npm run start:debug
 ```
 
+
+## Testing and Sample Error
+
+Once the Nest.js server is running you can go to http://localhost:3000/throw and it will create a sample error in your Sentry project.
+
+Or you can run the E2E test:
+
+```bash
+$ npm run test:e2e
+```
+
+
 ## Step by step
 
-Below are some explanations on how to do a clean setup in your existing project.
+Below are some explanations on how to do a clean setup from scratch in your existing project.
 
 ### Dependencies
 
