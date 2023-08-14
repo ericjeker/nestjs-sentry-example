@@ -59,11 +59,11 @@ $ nest g interceptor sentry/sentry
 
 ### SentryModule
 
-Create the `SentryModule.forRoot()` method and add the `Sentry.init(options)` in it.
+Create the `SentryModule.forRoot()` [method](https://github.com/ericjeker/nestjs-sentry-example/blob/master/src/sentry/sentry.module.ts#L13) and add the `Sentry.init(options)` in it.
 
-Call the `Sentry.Module.forRoot({...})` in the `AppModule`.
+Call the `SentryModule.forRoot({...})` in the `AppModule`.
 
-Add the call to the Express requestHandler middleware in the `AppModule`.
+Add the call to the Express requestHandler [middleware](https://github.com/ericjeker/nestjs-sentry-example/blob/963afe70b87155cf0b3771673328ef072e9a9ff7/src/app.module.ts#L25) in the `AppModule`.
 
 ```javascript
   configure(consumer: MiddlewareConsumer): void {
@@ -74,18 +74,18 @@ Add the call to the Express requestHandler middleware in the `AppModule`.
   }
 ```
 
-It is important to use that middleware otherwise the current Hub will be global and
-you will run into conflict as Sentry create a Hub by thread and Node.js is not multi-thread.
+It is important to use that middleware otherwise the current Hub will be global, and
+you will run into conflicts as Sentry create a Hub by thread and Node.js is not multi-thread.
 
 ### SentryService
 
 We want to initialize the transaction in the constructor of the service. You can
-customize your main transaction there.
+customize your main transaction [there](https://github.com/ericjeker/nestjs-sentry-example/blob/963afe70b87155cf0b3771673328ef072e9a9ff7/src/sentry/sentry.service.ts#L25).
 
 Note that because I inject the Express request, the service must be request scoped. You
 can read more about that [here](https://docs.nestjs.com/fundamentals/injection-scopes#request-provider).
 
-```javascript
+```typescript
 @Injectable({ scope: Scope.REQUEST })
 export class SentryService {
   constructor(@Inject(REQUEST) private request: Request) {
@@ -96,10 +96,10 @@ export class SentryService {
 
 ### SentryInterceptor
 
-The `SentryInterceptor` will capture the exception and finish the transaction. Please also
+The `SentryInterceptor` will [capture](https://github.com/ericjeker/nestjs-sentry-example/blob/963afe70b87155cf0b3771673328ef072e9a9ff7/src/sentry/sentry.interceptor.ts#L19) the exception and finish the transaction. Please also
 note that it must be request scoped as we inject the `SentryService`:
 
-```javascript
+```typescript
 @Injectable({ scope: Scope.REQUEST })
 export class SentryInterceptor implements NestInterceptor {
   constructor(private sentryService: SentryService) {}
