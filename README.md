@@ -4,7 +4,6 @@ Simple Sentry setup on [Nest](https://github.com/nestjs/nest) framework.
 Just explore the code for more details, especially the files in the `sentry` 
 folder.
 
-
 ## Installation
 
 To run this simple example, clone this repository and install the dependencies. Then copy `.env.sample` to `.env` and insert your own Sentry DNS.
@@ -17,7 +16,6 @@ Then run Nest using the usual command:
 $ npm run start:debug
 ```
 
-
 ## Testing and Sample Error
 
 Once the Nest.js server is running you can go to http://localhost:3000/throw and it will create a sample error in your Sentry project.
@@ -27,6 +25,13 @@ Or you can run the E2E test:
 ```bash
 $ npm run test:e2e
 ```
+In the `test/load` directory you will find two [Artillery](https://www.artillery.io/) scripts to test the performance of your application. You can 
+run them using the following commands:
+
+```bash
+$ artillery run smoke-test.yml
+```
+Be careful not to eat all your quota on Sentry.
 
 
 ## Step by step
@@ -79,32 +84,40 @@ you will run into conflicts as Sentry create a Hub by thread and Node.js is not 
 
 ### SentryService
 
-We want to initialize the transaction in the constructor of the service. You can
-customize your main transaction [there](https://github.com/ericjeker/nestjs-sentry-example/blob/963afe70b87155cf0b3771673328ef072e9a9ff7/src/sentry/sentry.service.ts#L25).
-
-Note that because I inject the Express request, the service must be request scoped. You
-can read more about that [here](https://docs.nestjs.com/fundamentals/injection-scopes#request-provider).
+We want to initialize the transaction in the service. For that we create the `getRequestSpan` method.
 
 ```typescript
-@Injectable({ scope: Scope.REQUEST })
+@Injectable()
 export class SentryService {
-  constructor(@Inject(REQUEST) private request: Request) {
-    // ... etc ...
+  public getRequestSpan(request: Request, spanContext: SpanContext) {
+    const { method, headers, url } = request;
+
+    const transaction = Sentry.startTransaction({
+      name: `Route: ${method} ${url}`,
+      op: 'transaction',
+    });
+    
+    ... etc ...
   }
 }
 ```
 
 ### SentryInterceptor
 
-The `SentryInterceptor` will [capture](https://github.com/ericjeker/nestjs-sentry-example/blob/963afe70b87155cf0b3771673328ef072e9a9ff7/src/sentry/sentry.interceptor.ts#L19) the exception and finish the transaction. Please also
-note that it must be request scoped as we inject the `SentryService`:
+The `SentryInterceptor` will first initialize the span, and then [capture](https://github.com/ericjeker/nestjs-sentry-example/blob/963afe70b87155cf0b3771673328ef072e9a9ff7/src/sentry/sentry.interceptor.ts#L19) the exception and finish the transaction.
 
 ```typescript
-@Injectable({ scope: Scope.REQUEST })
+@Injectable()
 export class SentryInterceptor implements NestInterceptor {
   constructor(private sentryService: SentryService) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    const request = context.switchToHttp().getRequest();
+
+    const span = this.sentryService.getRequestSpan(request, {
+      op: `Route Handler`,
+    });
+
     // ... etc ...
   }
 }
