@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+
+# Read the version from package.json
+version=$(jq -r '.version' package.json | awk -F. -v OFS=. '{print}')
+
+# Git tag the version
+git tag -a "v$version" -m "v$version"

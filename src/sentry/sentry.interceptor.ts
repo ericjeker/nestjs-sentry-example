@@ -1,34 +1,43 @@
+import * as Sentry from '@sentry/node';
 import {
   CallHandler,
   ExecutionContext,
   Injectable,
   NestInterceptor,
 } from '@nestjs/common';
-import { catchError, finalize, Observable, throwError } from 'rxjs';
-import { SentryService } from './sentry.service';
-import * as Sentry from '@sentry/node';
+import { Observable, tap } from 'rxjs';
 
 @Injectable()
 export class SentryInterceptor implements NestInterceptor {
-  constructor(private sentryService: SentryService) {}
-
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
+    const { method, url } = request;
 
-    const span = this.sentryService.getRequestSpan(request, {
-      op: `Route Handler`,
+    // Start the Sentry transaction
+    const transaction = Sentry.startTransaction({
+      op: 'http.server',
+      name: `${method} ${url}`,
+    });
+
+    // Set the transaction to the current scope
+    Sentry.getCurrentHub().getScope().setSpan(transaction);
+    // Sentry.getCurrentHub().configureScope((scope) => {
+    //   scope.setSpan(transaction);
+    // });
+
+    // Start a child span for the request handler
+    const span = transaction.startChild({
+      op: 'http.handler',
+      description: `${context.getClass().name}.${context.getHandler().name}`,
     });
 
     return next.handle().pipe(
-      catchError((error) => {
-        // capture the error, you can filter out some errors here
-        Sentry.captureException(error, span.getTraceContext());
-
-        // throw again the error
-        return throwError(() => error);
-      }),
-      finalize(() => {
+      tap(() => {
+        // Finish the span and transaction
         span.finish();
+
+        // Set the transaction to finished
+        transaction.finish();
       }),
     );
   }

@@ -1,21 +1,51 @@
+import * as Sentry from '@sentry/node';
+import { ProfilingIntegration } from '@sentry/profiling-node';
 import { RequestMethod } from '@nestjs/common';
 import { MiddlewareConsumer } from '@nestjs/common';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-
 import { SentryModule } from './sentry/sentry.module';
-import * as Sentry from '@sentry/node';
-import '@sentry/tracing';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
+    // Refer to the documentation for more information: https://docs.sentry.io/platforms/node/configuration/options/
     SentryModule.forRoot({
       dsn: process.env.SENTRY_DNS,
-      tracesSampleRate: 1.0,
-      debug: true,
+      // Transaction with profiling cost 1.3 instead of 1.0,
+      // you can add more profiling here for example Prisma or postgresql
+      integrations: [new ProfilingIntegration()],
+      // Performance Monitoring
+      tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+      // Set sampling rate for profiling - this is relative to tracesSampleRate
+      profilesSampleRate: 1.0,
+
+      // Set the environment & release version
+      environment: process.env.NODE_ENV,
+      release: `${process.env.npm_package_name}@${process.env.npm_package_version}`,
+
+      // Disable transport in development, transaction are still captured in debug mode
+      enabled: process.env.NODE_ENV !== 'development',
+      enableTracing: process.env.NODE_ENV !== 'development',
+
+      // Enable debug mode to log event submission
+      debug: process.env.NODE_ENV === 'development',
+
+      // Called for message and error events
+      beforeSend(event) {
+        // Modify or drop the event here
+        // process.env.NODE_ENV === 'development' && console.log(event);
+        return event;
+      },
+
+      // Called for transaction events, you can further debug your transactions here
+      beforeSendTransaction(event) {
+        // Modify or drop the event here
+        // process.env.NODE_ENV === 'development' && console.log(event);
+        return event;
+      },
     }),
   ],
   controllers: [AppController],
