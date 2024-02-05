@@ -9,19 +9,13 @@ export class AppController {
   @Get()
   async getHello(): Promise<string> {
     // Start a child span for the request handler
-    const span = Sentry.getCurrentHub().getScope().getTransaction().startChild({
-      op: 'http.hello',
-      description: `AppController.getHello()`,
-    });
-
-    // Call the service or process the request
-    const response = await this.appService.getHello();
-
-    // Finish the span
-    span.finish();
-
-    // Return the response
-    return response;
+    return Sentry.startSpan(
+      {
+        op: 'http.server',
+        name: `AppController.getHello()`,
+      },
+      () => this.appService.getHello(),
+    );
   }
 
   @Get('throw')

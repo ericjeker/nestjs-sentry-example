@@ -1,8 +1,5 @@
 import * as Sentry from '@sentry/node';
-import { ProfilingIntegration } from '@sentry/profiling-node';
-import { RequestMethod } from '@nestjs/common';
-import { MiddlewareConsumer } from '@nestjs/common';
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -16,7 +13,10 @@ import { SentryModule } from './sentry/sentry.module';
       dsn: process.env.SENTRY_DNS,
       // Transaction with profiling cost 1.3 instead of 1.0,
       // you can add more profiling here for example Prisma or postgresql
-      integrations: [new ProfilingIntegration()],
+      integrations: [
+        // enable HTTP calls tracing
+        new Sentry.Integrations.Http({ tracing: true }),
+      ],
       // Performance Monitoring
       tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
       // Set sampling rate for profiling - this is relative to tracesSampleRate
@@ -27,8 +27,8 @@ import { SentryModule } from './sentry/sentry.module';
       release: `${process.env.npm_package_name}@${process.env.npm_package_version}`,
 
       // Disable transport in development, transaction are still captured in debug mode
-      enabled: process.env.NODE_ENV !== 'development',
-      enableTracing: process.env.NODE_ENV !== 'development',
+      enabled: true, //process.env.NODE_ENV !== 'development',
+      enableTracing: true, //process.env.NODE_ENV !== 'development',
 
       // Enable debug mode to log event submission
       debug: process.env.NODE_ENV === 'development',
