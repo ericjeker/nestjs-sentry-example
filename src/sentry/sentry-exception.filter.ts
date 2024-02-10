@@ -6,7 +6,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
-import * as Sentry from '@sentry/node';
+import * as Sentry from '@sentry/node-experimental';
 
 /**
  * Catch all exceptions and forward to Sentry, this might not be what you want to do

@@ -1,0 +1,25 @@
+config:
+  target: http://localhost:3000
+  phases:
+    - duration: 60
+      arrivalRate: 5
+      rampTo: 125
+      name: Going up until it breaks in 1 minute
+  # Load & configure a couple of useful plugins
+  # https://docs.art/reference/extensions
+  plugins:
+    ensure: {}
+    apdex: {}
+    metrics-by-endpoint: {}
+  apdex:
+    threshold: 100
+  ensure:
+      thresholds:
+        - http.response_time.p99: 100
+        - http.response_time.p95: 75
+scenarios:
+  - flow:
+      - loop:
+        - get:
+            url: "/"
+        count: 10

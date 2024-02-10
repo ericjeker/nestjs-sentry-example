@@ -1,4 +1,3 @@
-import * as Sentry from '@sentry/node';
 import { Controller, Get, HttpException } from '@nestjs/common';
 import { AppService } from './app.service';
 
@@ -9,13 +8,7 @@ export class AppController {
   @Get()
   async getHello(): Promise<string> {
     // Start a child span for the request handler
-    return Sentry.startSpan(
-      {
-        op: 'http.server',
-        name: `AppController.getHello()`,
-      },
-      () => this.appService.getHello(),
-    );
+    return this.appService.getHello();
   }
 
   @Get('throw')
