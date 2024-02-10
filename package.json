@@ -24,7 +24,7 @@
     "@nestjs/common": "^10.3.1",
     "@nestjs/config": "^3.1.1",
     "@nestjs/core": "^10.3.1",
-    "@nestjs/platform-express": "^10.3.1",
+    "@nestjs/platform-fastify": "^10.3.2",
     "@sentry/node-experimental": "^7.100.1",
     "reflect-metadata": "^0.1.14",
     "rimraf": "^5.0.5",
