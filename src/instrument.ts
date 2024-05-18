@@ -22,8 +22,8 @@ Sentry.init({
   release: `${process.env.npm_package_name}@${process.env.npm_package_version}`,
 
   // Disable transport in development, transaction are still captured in debug mode, check the console
-  enabled: true || process.env.NODE_ENV !== 'development',
-  enableTracing: true || process.env.NODE_ENV !== 'development',
+  enabled: process.env.NODE_ENV !== 'development',
+  enableTracing: process.env.NODE_ENV !== 'development',
 
   // Enable debug mode to log event submission
   debug: process.env.NODE_ENV === 'development',
