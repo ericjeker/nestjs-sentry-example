@@ -1,31 +1,35 @@
 import * as Sentry from '@sentry/node';
-import { Controller, Get, HttpException } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
+
+type Response = { version: string };
 
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get()
-  async getHello(): Promise<string> {
-    // Start a child span for the request handler
-    const span = Sentry.getCurrentHub().getScope().getTransaction().startChild({
-      op: 'http.hello',
-      description: `AppController.getHello()`,
-    });
+  success(): Response {
+    return this.appService.success();
+  }
 
-    // Call the service or process the request
-    const response = await this.appService.getHello();
+  @Get('manual')
+  manual(): Response {
+    return Sentry.startSpan<Response>({ name: 'manual-transaction' }, () =>
+      this.appService.success(),
+    );
+  }
 
-    // Finish the span
-    span.finish();
-
-    // Return the response
-    return response;
+  @Get('manual-async')
+  manualAsync(): Promise<Response> {
+    return Sentry.startSpan<Promise<Response>>(
+      { name: 'manual-transaction' },
+      () => this.appService.successAsync(),
+    );
   }
 
   @Get('throw')
-  throwError(): string {
-    throw new HttpException({ message: 'Sample Error' }, 500);
+  throwError(): void {
+    this.appService.throwError();
   }
 }

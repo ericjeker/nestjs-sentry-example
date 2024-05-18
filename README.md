@@ -1,15 +1,31 @@
 ## Description
 
-Simple Sentry setup on [Nest](https://github.com/nestjs/nest) framework.
-Just explore the code for more details, especially the files in the `sentry`
-folder.
+Example of a Sentry setup for [Nest.js](https://github.com/nestjs/nest) framework.
+
+Just read this doc and explore the code for more details. If you want a more basic example or add Sentry in an existing
+project just follow the Step by Step below.
+
+Sentry provides their own Nest.js example [here](https://github.com/getsentry/sentry-javascript-examples/tree/main/apps/nestjs) and
+you can read their documentation [here](https://docs.sentry.io/platforms/javascript/guides/nestjs/).
+
+Below I mark a few differences between their example and mine:
+
+- I use the `nest new <project>` command to create the project and didn't remove any file, so it will look 1:1 to what you should have starting a "real" Nest.js project.
+- I use Fastify instead of Express. The reason I use Fastify is that it is faster than Express. You can read more about it [here](https://docs.nestjs.com/techniques/performance) and there is pretty much no difference in the code. If for some reason you prefer Express, don't worry, it will work the same.
+- My `instrument.ts` file is more complete with an explanation on standard options that you might want to use in a real project.
+
+## Migration from v2.0 to v3.0
+
+The previous version of this example was using Sentry SDK v7.x. The new version uses Sentry SDK v8.0. In v8.0, the SDK
+is doing pretty much everything for you, so it's more a matter of configuration than coding.
+
+We removed the `SentryInterceptor`, `SentryService`, `SentryModule` classes and added a `instrument.ts` file. The `main.ts` 
+file has changed and include the `Sentry.init(...)` call through the `instrument.ts` file and the `Sentry.setupNestErrorHandler()` call.
 
 ## Installation
 
-To run this simple example, clone this repository and install the dependencies. Then copy `.env.sample` to `.env` and
-insert your own Sentry DNS.
-
-You can find DNS for your project on Sentry.io in Project Setting / Client Keys.
+To run this example, clone this repository and install the dependencies. Then copy `.env.sample` to `.env` and
+insert your own Sentry DSN. You can find the DSN for your project on Sentry.io in Project Setting / Client Keys.
 
 Then run Nest using the usual command:
 
@@ -17,113 +33,66 @@ Then run Nest using the usual command:
 npm run start:debug
 ```
 
-## Testing and Sample Error
+## Sample Error
+
+**Note: by default the error and tracing are disabled in DEVELOPMENT environment. You can change this in the `instrument.ts`**
 
 Once the Nest.js server is running you can go to http://localhost:3000/throw, it will create a sample error in your
 Sentry project.
 
-Or you can run the E2E test:
+## Testing
+
+You can run the E2E test like so:
 
 ```bash
 npm run test:e2e
 ```
 
 In the `test/load` directory you will find two [Artillery](https://www.artillery.io/) scripts to test the performance of
-your application. You can
-run them using the following commands:
+your application. You can run them using the following commands:
 
 ```bash
-npx artillery run smoke-test.yml
+npx artillery run test/load/smoke-test.yml
 ```
 
-Be careful not to eat all your quota on Sentry.
+Be careful not to eat up your quota on Sentry.
 
 ## Step by step
 
-Below are some explanations on how to do a clean setup from scratch in your existing project.
+Below are some explanations on how to do a clean setup from scratch or in an existing project.
 
-### Dependencies
+### Installation
 
-Create a new Nest app using the CLI
+If you start from scratch, create a new Nest app using the CLI
 
 ```bash
 nest new sentry-setup
+cd sentry-setup
 ```
 
-Install Sentry
+Then install `dotenv` and Sentry Node.js SDK
 
 ```bash
-npm i --save @sentry/node @sentry/profiling-node
+npm i --save dotenv @sentry/node
 ```
 
-### Create the needed elements
+Add the `SENTRY_DSN` to your `.env` file.
 
-Create Sentry module, service and interceptor
+Create the `instrument.ts` file and call `Sentry.setupNestErrorHandler()` in the `main.ts` file. This will automatically
+catch all errors in your application and send them to Sentry.
 
-```bash
-nest g module sentry
-nest g interceptor sentry
-nest g filter sentry/sentry-exception --flat
-```
-
-### SentryModule
-
-Create
-the `SentryModule.forRoot()` [method](https://github.com/ericjeker/nestjs-sentry-example/blob/master/src/sentry/sentry.module.ts#L13)
-and add the `Sentry.init(options)` in it.
-
-Call the `SentryModule.forRoot({...})` in the `AppModule`.
-
-Add the call to the Express
-requestHandler [middleware](https://github.com/ericjeker/nestjs-sentry-example/blob/963afe70b87155cf0b3771673328ef072e9a9ff7/src/app.module.ts#L25)
-in the `AppModule`.
+Below is a very basic example of the `instrument.ts` file:
 
 ```typescript
-  configure(consumer
-:
-MiddlewareConsumer
-):
-void {
-  consumer.apply(Sentry.Handlers.requestHandler()).forRoutes({
-    path: '*',
-    method: RequestMethod.ALL,
-  });
-}
+import * as Sentry from '@sentry/node';
+import 'dotenv/config';
+
+// Ensure to call this before importing any other modules!
+Sentry.init({
+  dsn: process.env.SENTRY_DSN, 
+
+  // Add Performance Monitoring by setting tracesSampleRate
+  // We recommend adjusting this value in production
+  tracesSampleRate: 1.0,
+});
 ```
-
-It is important to use that middleware otherwise the current Hub will be global, and
-you will run into conflicts as Sentry create a Hub by thread and Node.js is not multi-thread.
-
-### SentryInterceptor
-
-The `SentryInterceptor` will start the transaction, and finish it after the route was handled.
-
-```typescript
-@Injectable()
-export class SentryInterceptor implements NestInterceptor {
-  constructor(private sentryService: SentryService) {
-  }
-
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const request = context.switchToHttp().getRequest();
-    const { method, url } = request;
-
-    // Start the Sentry transaction
-    const transaction = Sentry.startTransaction({
-      op: 'http.server',
-      name: `${method} ${url}`,
-    });
-
-    // ... etc ...
-  }
-}
-```
-
-As an example I added a span. This is not necessary, but it will make the trace
-nicer in the performance tab of Sentry.
-
-You can add more span anywhere in your application simply by using `Sentry.getCurrentHub()`.
-
-### SentryExceptionFilter
-
-This is where the exception are caught and sent to Sentry.

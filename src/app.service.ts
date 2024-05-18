@@ -1,8 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class AppService {
-  async getHello(): Promise<string> {
-    return 'Hello World!';
+  throwError() {
+    throw new HttpException({ message: 'Sample Error' }, 500);
+  }
+
+  success() {
+    return { version: 'v3.0' };
+  }
+
+  async successAsync() {
+    return { version: 'v3.0' };
   }
 }
