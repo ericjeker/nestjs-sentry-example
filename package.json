@@ -1,6 +1,6 @@
 {
   "name": "sentry-setup",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Nest.js Sentry Setup",
   "author": "Eric Jeker <eric@wowww.ch>",
   "private": false,
@@ -22,7 +22,7 @@
   "dependencies": {
     "@nestjs/common": "^10.0.0",
     "@nestjs/core": "^10.0.0",
-    "@nestjs/platform-express": "^10.0.0",
+    "@nestjs/platform-fastify": "^10.3.8",
     "@sentry/node": "^8.2.1",
     "dotenv": "^16.4.5",
     "reflect-metadata": "^0.2.0",
