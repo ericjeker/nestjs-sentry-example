@@ -1,3 +1,8 @@
+## DEPRECATION NOTICE
+
+This branch hold the v2.0 of this example. It uses an old version of Sentry (v7) and Nest.js (v10). 
+It is not recommended to use this version anymore. Please refer to the [main branch](https://github.com/ericjeker/nestjs-sentry-example) for the latest version.
+
 ## Description
 
 Simple Sentry setup on [Nest](https://github.com/nestjs/nest) framework.
@@ -79,11 +84,7 @@ requestHandler [middleware](https://github.com/ericjeker/nestjs-sentry-example/b
 in the `AppModule`.
 
 ```typescript
-  configure(consumer
-:
-MiddlewareConsumer
-):
-void {
+configure(consumer: MiddlewareConsumer): void {
   consumer.apply(Sentry.Handlers.requestHandler()).forRoutes({
     path: '*',
     method: RequestMethod.ALL,
